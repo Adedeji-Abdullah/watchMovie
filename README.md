@@ -1,5 +1,18 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Account registration
+
+Set `MONGO_URI` in `.env` to your MongoDB connection string. The Express registration API uses port `8000` by default (or `PORT` if set), and the access page sends registrations to `http://localhost:8000/register`.
+
+Run the frontend and API in separate terminals:
+
+```bash
+npm run dev
+npm run server
+```
+
+If the API runs at a different address, set `NEXT_PUBLIC_API_URL` to its origin. For a frontend hosted away from `http://localhost:3000`, set `FRONTEND_URL` to its origin for CORS.
+
 ## Getting Started
 
 First, run the development server:
