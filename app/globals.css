@@ -24,3 +24,23 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@keyframes movie-flow-pan {
+  0% {
+    background-position: 45% 35%;
+  }
+  50% {
+    background-position: 50% 45%;
+  }
+  100% {
+    background-position: 55% 55%;
+  }
+}
+
+.movie-flow-bg {
+  background-image: url("/movie-bg.jpg");
+  background-size: 115% auto;
+  background-position: center;
+  background-repeat: no-repeat;
+  animation: movie-flow-pan 24s ease-in-out infinite alternate;
+}

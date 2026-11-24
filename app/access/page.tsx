@@ -1,40 +1,33 @@
 "use client";
 
-import { redirect } from "next/navigation";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useState, type FormEvent } from "react";
+import { setAccessToken } from "@/lib/auth";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [isRegistering, setIsRegistering] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
   const [formSuccess, setFormSuccess] = useState("");
+  const [error, setError] = useState("");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const form = event.currentTarget;
     const formData = new FormData(form);
-    const apiBaseUrl = new URL(process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000",);
+    const apiBaseUrl = new URL(
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000",
+    );
 
-    if (!isRegistering) {
-      const response = await fetch(new URL("/login", apiBaseUrl), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: formData.get("email"),
-          password: formData.get("password"),
-        }),
-      });
-      console.log(response);
-      if (response.ok){
-        redirect('/')
-      }
-    } else {
-      setIsSubmitting(true);
-      setFormError("");
-      setFormSuccess("");
+    setIsSubmitting(true);
+    setFormError("");
+    setFormSuccess("");
 
-      try {
+    try {
+      if (isRegistering) {
         const response = await fetch(new URL("/register", apiBaseUrl), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -56,16 +49,41 @@ export default function LoginPage() {
 
         form.reset();
         setFormSuccess(result.message || "Account created successfully.");
-        setIsRegistering(false)
-      } catch (error) {
-        setFormError(
-          error instanceof Error
-            ? error.message
-            : "Could not connect to the registration service. Please try again.",
-        );
-      } finally {
-        setIsSubmitting(false);
+        setIsRegistering(false);
+      } else {
+        const response = await fetch(new URL("/login", apiBaseUrl), {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: formData.get("email"),
+            password: formData.get("password"),
+          }),
+        });
+        const result: { message?: string; accessToken?: string } =
+          await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            result.message || "Unable to sign in. Please try again.",
+          );
+          setError("Unable to sign in. Please try again")
+        }
+        if (!result.accessToken) {
+          throw new Error("The login service did not return an access token.");
+        }
+
+        setAccessToken(result.accessToken);
+        router.replace("/");
       }
+    } catch (error) {
+      setFormError(
+        error instanceof Error
+          ? error.message
+          : "Could not connect to the account service. Please try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -80,7 +98,7 @@ export default function LoginPage() {
               'linear-gradient(180deg, rgba(13, 16, 13, 0.35) 0%, rgba(13, 16, 13, 0.2) 32%, rgba(13, 16, 13, 0.88) 100%), url("https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1500&q=85")',
           }}
         >
-          <a
+          <Link
             href="/"
             className="relative z-10 flex w-fit items-center gap-2.5 text-sm font-semibold tracking-[0.12em]"
           >
@@ -88,7 +106,7 @@ export default function LoginPage() {
               F
             </span>
             AL
-          </a>
+          </Link>
 
           <div className="relative z-10 max-w-md pb-1">
             <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#d6fa56]">
@@ -128,6 +146,8 @@ export default function LoginPage() {
               role="tablist"
               aria-label="Account access"
             >
+              
+              {error ? error : ""}
               <button
                 type="button"
                 role="tab"
@@ -276,7 +296,9 @@ export default function LoginPage() {
                 className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-[4px] bg-[#20231d] px-4 text-sm font-semibold text-white transition hover:bg-[#363a30] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#73951e]"
               >
                 {isSubmitting
-                  ? "Creating account..."
+                  ? isRegistering
+                    ? "Creating account..."
+                    : "Signing in..."
                   : isRegistering
                     ? "Create your account"
                     : "Sign in"}

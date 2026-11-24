@@ -2,7 +2,11 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Account registration
 
-Set `MONGO_URI` in `.env` to your MongoDB connection string. The Express registration API uses port `8000` by default (or `PORT` if set), and the access page sends registrations to `http://localhost:8000/register`.
+Set `MONGO_URI` in `.env` to your MongoDB connection string. Add separate random values for `ACCESS_TOKEN_SECRET` and `REFRESH_TOKEN_SECRET` (at least 32 characters each); generate one with `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"`. The server also accepts the existing `ACCESS_TOKEN` setting as a temporary fallback for `ACCESS_TOKEN_SECRET`.
+
+The Express API uses port `8000` by default (or `PORT` if set). Login returns a 15-minute access token in JSON and sets a 7-day refresh token in an HttpOnly cookie. The access page keeps the access token in memory; client code can read it with `getAccessToken()` from `lib/auth.ts` and send it as `Authorization: Bearer <accessToken>` to protected endpoints such as `/me`. After a page reload or an expired access token, call `POST /refresh` with credentials included and pass the new access token to `setAccessToken()`. Call `POST /logout` to revoke the current refresh token. Each account currently has one active refresh-token session, so signing in again invalidates its previous refresh token.
+
+The access page sends requests to `http://localhost:8000` by default. If the API runs at a different address, set `NEXT_PUBLIC_API_URL` to its origin. For a frontend hosted away from `http://localhost:3000`, set `FRONTEND_URL` to its origin for credentialed CORS requests. In production, serve the API over HTTPS so the refresh cookie is marked `Secure`.
 
 Run the frontend and API in separate terminals:
 
@@ -10,8 +14,6 @@ Run the frontend and API in separate terminals:
 npm run dev
 npm run server
 ```
-
-If the API runs at a different address, set `NEXT_PUBLIC_API_URL` to its origin. For a frontend hosted away from `http://localhost:3000`, set `FRONTEND_URL` to its origin for CORS.
 
 ## Getting Started
 
