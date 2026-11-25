@@ -51,6 +51,12 @@ export default function ProtectedPage() {
       date?: string;
     }[]
   >([]);
+  const [identifier, setIdentifier] = useState<string | null>(null);
+  const [video, setVideo] = useState<{
+    identifier: string;
+    src?: string;
+    error?: string;
+  } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -98,6 +104,68 @@ export default function ProtectedPage() {
     };
   }, [router]);
 
+  useEffect(() => {
+    if (!identifier) return;
+
+    const selectedIdentifier = identifier;
+    let cancelled = false;
+
+    async function loadVideo() {
+      try {
+        const response = await fetch(
+          `https://archive.org/metadata/${encodeURIComponent(selectedIdentifier)}`,
+        );
+        if (!response.ok) {
+          throw new Error("Could not load the film's Archive.org metadata.");
+        }
+
+        const metadata: {
+          files?: { name?: string }[];
+        } = await response.json();
+        const playableFiles = (metadata.files ?? []).filter(
+          (file): file is { name: string } =>
+            typeof file.name === "string" &&
+            /\.(mp4|m4v|webm|ogv|ogg)$/i.test(file.name),
+        );
+        const videoFile =
+          playableFiles.find((file) => /_512kb\.mp4$/i.test(file.name)) ??
+          playableFiles.find((file) => /\.mp4$/i.test(file.name)) ??
+          playableFiles[0];
+
+        if (!videoFile) {
+          throw new Error("This Archive.org item has no playable video file.");
+        }
+
+        if (!cancelled) {
+          setVideo({
+            identifier: selectedIdentifier,
+            src: `https://archive.org/download/${encodeURIComponent(selectedIdentifier)}/${encodeURIComponent(videoFile.name)}`,
+          });
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setVideo({
+            identifier: selectedIdentifier,
+            error:
+              error instanceof Error
+                ? error.message
+                : "Could not load this video.",
+          });
+        }
+      }
+    }
+
+    loadVideo();
+    return () => {
+      cancelled = true;
+    };
+  }, [identifier]);
+
+  const videoMatchesSelection = video?.identifier === identifier;
+  const videoSrc = videoMatchesSelection ? video.src : null;
+  const videoError = videoMatchesSelection ? video.error : null;
+  const videoLoading = Boolean(identifier) && !videoMatchesSelection;
+
   const searchMovies = async (query: string) => {
     const url = new URL("https://archive.org/advancedsearch.php");
     url.searchParams.set(
@@ -118,6 +186,7 @@ export default function ProtectedPage() {
     }
 
     const data = await response.json();
+    console.log(data.response.docs[0].identifier)
     return data.response?.docs ?? [];
   };
 
@@ -217,6 +286,10 @@ export default function ProtectedPage() {
                   <article
                     key={movie.identifier}
                     className="group overflow-hidden rounded-xl border border-white/10 bg-white/5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-400/30 hover:bg-white/[0.08]"
+                    onClick={() => {
+                      console.log("Clicked movie:", movie.title, movie.identifier);
+                      setIdentifier(movie.identifier);
+                    }}
                   >
                     <div className="aspect-video w-full overflow-hidden bg-black/50 p-2">
                       <img
@@ -247,6 +320,35 @@ export default function ProtectedPage() {
               </div>
             )}
           </div>
+        </section>
+        <section>
+          {identifier && (
+            <div className="mt-8 rounded-2xl border border-white/10 bg-black/20 p-5 shadow-md">
+              <h2 className="text-xl font-bold text-white">Selected Film</h2>
+              <p className="text-white/70">Identifier: {identifier}</p>
+              {videoLoading && (
+                <p className="mt-4 text-sm text-white/70">Finding video...</p>
+              )}
+              {videoError && (
+                <p className="mt-4 text-sm text-red-300">{videoError}</p>
+              )}
+              {videoSrc && !videoError && (
+                <video
+                  controls
+                  src={videoSrc}
+                  onError={() =>
+                    setVideo({
+                      identifier,
+                      error: "This video file could not be played.",
+                    })
+                  }
+                  className="mt-4 w-full rounded-lg border border-white/10 bg-black/50"
+                >
+                  Your browser does not support the video tag.
+                </video>
+              )}
+            </div>
+          )}
         </section>
       </div>
     </main>
