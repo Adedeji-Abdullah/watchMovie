@@ -63,7 +63,7 @@ export default function ProtectedPage() {
 
     async function loadAuthenticatedUser() {
       const apiBaseUrl = new URL(
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000",
+        process.env.NEXT_PUBLIC_API_URL || "http://10.196.214.86:8000",
       );
       let accessToken = getAccessToken();
 
@@ -192,12 +192,12 @@ export default function ProtectedPage() {
 
   const logout = async () => {
     const apiBaseUrl = new URL(
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000",
+      process.env.NEXT_PUBLIC_API_URL || "http://10.196.214.86:8000",
     );
     let accessToken = getAccessToken();
     console.log(accessToken)
     try {
-      const response = await fetch(`http://localhost:8000/logout`, {
+      const response = await fetch(`http://10.196.214.86:8000/logout`, {
         method: 'POST',
         credentials: "include"
       });
