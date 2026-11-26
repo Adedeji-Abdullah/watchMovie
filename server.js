@@ -30,7 +30,7 @@ const cookieOptions = {
 app.use(express.json());
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://10.196.214.86:8000",
+    origin: process.env.FRONTEND_URL || "https://al-movie.onrender.com",
     credentials: true,
   }),
 );

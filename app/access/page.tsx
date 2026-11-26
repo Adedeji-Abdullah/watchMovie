@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
-import { setAccessToken } from "@/lib/auth";
+import { getApiBaseUrl, setAccessToken } from "@/lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -18,15 +18,14 @@ export default function LoginPage() {
 
     const form = event.currentTarget;
     const formData = new FormData(form);
-    const apiBaseUrl = new URL(
-      process.env.NEXT_PUBLIC_API_URL || "http://10.196.214.86:8000",
-    );
 
     setIsSubmitting(true);
     setFormError("");
     setFormSuccess("");
 
     try {
+      const apiBaseUrl = getApiBaseUrl();
+
       if (isRegistering) {
         const response = await fetch(new URL("/register", apiBaseUrl), {
           method: "POST",

@@ -2,7 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getAccessToken, setAccessToken } from "@/lib/auth";
+import {
+  getAccessToken,
+  getApiBaseUrl,
+  setAccessToken,
+} from "@/lib/auth";
 
 type AuthUser = {
   id: string;
@@ -62,9 +66,14 @@ export default function ProtectedPage() {
     let cancelled = false;
 
     async function loadAuthenticatedUser() {
-      const apiBaseUrl = new URL(
-        process.env.NEXT_PUBLIC_API_URL || "http://10.196.214.86:8000",
-      );
+      let apiBaseUrl: URL;
+      try {
+        apiBaseUrl = getApiBaseUrl();
+      } catch (error) {
+        console.error(error);
+        if (!cancelled) router.replace("/access");
+        return;
+      }
       let accessToken = getAccessToken();
 
       if (!accessToken) {
@@ -191,19 +200,14 @@ export default function ProtectedPage() {
   };
 
   const logout = async () => {
-    const apiBaseUrl = new URL(
-      process.env.NEXT_PUBLIC_API_URL || "http://10.196.214.86:8000",
-    );
-    let accessToken = getAccessToken();
-    console.log(accessToken)
     try {
-      const response = await fetch(`http://10.196.214.86:8000/logout`, {
+      const response = await fetch(new URL("/logout", getApiBaseUrl()), {
         method: 'POST',
-        credentials: "include"
+        credentials: "include",
       });
-      console.log("out");
 
       if (response.ok) {
+        setAccessToken(null);
         router.push("/access");
       }
     } catch (error) {
