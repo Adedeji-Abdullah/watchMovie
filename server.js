@@ -30,7 +30,7 @@ const cookieOptions = {
 app.use(express.json());
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "https://al-movies-ten.vercel.app",
+    origin: process.env.FRONTEND_URL || "https://al-movies-ten.vercel.app" || "http://localhost:3000" || "https://al-movie.vercel.app",
     credentials: true,
   }),
 );
