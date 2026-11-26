@@ -4,11 +4,11 @@ export function getApiBaseUrl() {
   const configuredUrl = process.env.NEXT_PUBLIC_API_URL;
 
   if (!configuredUrl) {
-    if (process.env.NODE_ENV === "production") {
-      throw new Error("NEXT_PUBLIC_API_URL must be set in production.");
-    }
-
-    return new URL("http://localhost:8000");
+    const defaultUrl =
+      process.env.NODE_ENV === "production"
+        ? "https://al-movie.onrender.com"
+        : "http://localhost:8000";
+    return new URL(defaultUrl);
   }
 
   return new URL(configuredUrl);
